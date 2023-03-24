@@ -1,6 +1,6 @@
 import json
 from multidict import MultiDict
-from lib.light_control import LightControl
+from utils.light_control import LightControl
 from plvlcify.constants import PROJECT_DIR
 import io
 import pathlib
@@ -13,7 +13,7 @@ import sys
 import os
 from aiohttp import web
 
-from lib import m3u as m3u_lib
+from utils import m3u as m3u_lib
 from yeelight import BulbException, LightType
 
 import logging
