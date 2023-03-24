@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "adev runserver --app-factory init_app",
+            "type": "python",
+            "request": "launch",
+            "program": "adev.py",
+            "args": [
+                "runserver",
+                ".\\src\\plvlcify",
+                "--app-factory",
+                "init_app"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
