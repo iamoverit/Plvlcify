@@ -1,3 +1,4 @@
+import json
 from multidict import MultiDict
 from lib.light_control import LightControl
 from plvlcify.constants import PROJECT_DIR
@@ -21,6 +22,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 STATIC_PATH = (pathlib.Path(__file__).parent.parent / 'static')
 COMMANDS = ['turn_on', 'turn_off', 'set_rgb']
+bool_mapping = {'on': True, 'off': False,
+                'yes': True, 'no': False,
+                'true': True, 'false': False,
+                't': True, 'f': False,
+                'y': True, 'n': False,
+                1: True, 0: False}
 
 
 @aiohttp_jinja2.template('index.html')
@@ -47,6 +54,7 @@ async def route_m3u(request: web.Request) -> web.Response:
 async def route_home(request: web.Request) -> web.Response:
     if request.match_info['key'] == os.environ.get('plvlcify_home_key'):
         kwargs = {}
+        result = {}
         command = request.match_info['command']
         if (command.startswith('bg_')):
             command = command[3:]
@@ -56,12 +64,17 @@ async def route_home(request: web.Request) -> web.Response:
         try:
             query = MultiDict(request.rel_url.query)
             extract = query.pop('extract', None)
-            result = call_func(
-                *[(int(v) if v.isnumeric() else 
-                   (v.split(';') if k.endswith('[]') else v)) 
-                   for k, v in query.items()], **kwargs)
+            cmd_result = call_func(
+                *[(int(v) if v.isnumeric() else
+                   (v.split(';') if k.endswith(('[]', '[0]')) else v))
+                  for k, v in query.items()], **kwargs)
             if extract is not None:
-                result = {'value': result.get(extract, None)}
+                cmd_result = cmd_result.get(extract, '')
+                result['value'] = bool_mapping.get(cmd_result, int(cmd_result) if cmd_result.isnumeric() else cmd_result)
+            else:
+                result['value'] = cmd_result
+            result['status'] = 'ok'
+            result = json.dumps(result)
             response = web.Response(text=str(result))
         except Exception as e:
             logging.debug(e)
