@@ -58,7 +58,7 @@ async def route_home(request: web.Request) -> web.Response:
         command = request.match_info['command']
         if (command.startswith('bg_')):
             command = command[3:]
-            kwargs = {'light_type': LightType.Ambient}
+            kwargs['light_type'] = LightType.Ambient
         a = LightControl()
         call_func = getattr(a, command)
         try:
@@ -77,7 +77,7 @@ async def route_home(request: web.Request) -> web.Response:
             result = json.dumps(result)
             response = web.Response(text=str(result))
         except Exception as e:
-            logging.debug(e)
+            logging.exception(e)
             response = web.Response(status=500, reason='Something went wrong')
     else:
         response = web.Response(status=403, reason='Wrong key!')
