@@ -1,6 +1,7 @@
 import json
+import backoff
 from multidict import MultiDict
-from utils.light_control import LightControl
+from utils.light_control import DiscoverException, LightControl
 from plvlcify.constants import PROJECT_DIR
 import io
 import pathlib
@@ -17,7 +18,9 @@ from utils import m3u as m3u_lib
 from yeelight import BulbException, LightType
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(asctime)s - [%(levelname)s] - [%(threadName)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s",)
+logger = logging.getLogger(__name__)
 
 
 STATIC_PATH = (pathlib.Path(__file__).parent.parent / 'static')
@@ -37,6 +40,11 @@ async def index(request: web.Request) -> Dict[str, str]:
     return {"text": text}
 
 
+async def discover_bulbs(*args, **kwargs):
+    a = LightControl()
+    a.discover_bulbs()
+
+
 async def route_m3u(request: web.Request) -> web.Response:
     m3u_list = m3u_lib.create_playList(STATIC_PATH, request)
     response = web.StreamResponse(headers={
@@ -51,6 +59,8 @@ async def route_m3u(request: web.Request) -> web.Response:
     return response
 
 
+@backoff.on_exception(backoff.expo, (DiscoverException, BulbException), max_tries=2, on_backoff=discover_bulbs,
+                      logger=logger, raise_on_giveup=True)
 async def route_home(request: web.Request) -> web.Response:
     if request.match_info['key'] == os.environ.get('plvlcify_home_key'):
         kwargs = {}
@@ -70,15 +80,16 @@ async def route_home(request: web.Request) -> web.Response:
                   for k, v in query.items()], **kwargs)
             if extract is not None:
                 cmd_result = cmd_result.get(extract, '')
-                result['value'] = bool_mapping.get(cmd_result, int(cmd_result) if cmd_result.isnumeric() else cmd_result)
+                result['value'] = bool_mapping.get(cmd_result, int(
+                    cmd_result) if cmd_result.isnumeric() else cmd_result)
             else:
                 result['value'] = cmd_result
             result['status'] = 'ok'
             result = json.dumps(result)
             response = web.Response(text=str(result))
-        except Exception as e:
-            logging.exception(e)
-            response = web.Response(status=500, reason='Something went wrong')
+        except (DiscoverException, BulbException) as e:
+            logger.exception(e)
+            raise
     else:
         response = web.Response(status=403, reason='Wrong key!')
     return response

@@ -12,7 +12,7 @@
                 "init_app"
             ],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         }
     ]
 }
