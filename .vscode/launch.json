@@ -2,12 +2,12 @@
     "configurations": [
         {
             "name": "adev runserver --app-factory init_app",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "adev.py",
             "args": [
                 "runserver",
-                ".\\src\\plvlcify",
+                "./src/plvlcify",
                 "--app-factory",
                 "init_app"
             ],

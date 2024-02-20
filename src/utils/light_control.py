@@ -28,8 +28,8 @@ class LightControl():
             # raise DiscoverException()
             result = None
             for bulb in self._bulbs:
-                bulb = Bulb(bulb.get('ip'), model=bulb.get(
-                    'capabilities', {}).get('model', None))
+                bulb = Bulb(bulb.get('ip'), 
+                            model=bulb.get('capabilities', {}).get('model', None))
                 call_func = getattr(bulb, name)
                 try:
                     result = call_func(*args, **kwargs)
@@ -47,10 +47,12 @@ class LightControl():
         self._bulbs = discover_bulbs()
 
         logger.debug(self._bulbs)
-        return discover_bulbs()
+        if len(self._bulbs) == 0:
+            self._bulbs.append({'ip': '192.168.3.30'})
+        # return discover_bulbs()
 
 
 if __name__ == '__main__':
     a = LightControl()
     logging.basicConfig(level=logging.DEBUG)
-    logger.debug(discover_bulbs())
+    logger.debug(a._bulbs)
